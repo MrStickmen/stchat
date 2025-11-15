@@ -3,22 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Чат — СтЧат</title>
+  <title>СтЧат</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body class="chat-page">
-  <div class="chat-container">
-    <header>
-      <h2>СтЧат</h2>
-      <button id="logoutBtn" class="btn small">Выйти</button>
-    </header>
-
-    <div id="messages" class="messages"></div>
-
-    <form id="messageForm" class="input-area">
-      <input type="text" id="messageInput" placeholder="Напишите сообщение..." required autocomplete="off" />
-      <button type="submit">Send</button>
-    </form>
+<body class="welcome-page">
+  <div class="container">
+    <h1 class="logo">СтЧат</h1>
+    <div class="buttons">
+      <a href="login.html" class="btn primary">Войти</a>
+      <a href="register.html" class="btn secondary">Регистрация</a>
+    </div>
   </div>
   <script type="module" src="script.js"></script>
 </body>
