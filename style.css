@@ -34,14 +34,8 @@ body {
 .logo {
   font-size: 3.8rem;
   font-weight: 800;
-  margin-bottom: 12px;
-  text-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
-}
-
-.container p {
-  font-size: 1.1rem;
   margin-bottom: 30px;
-  opacity: 0.9;
+  text-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
 }
 
 .buttons {
@@ -183,24 +177,26 @@ header h2 {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .message {
-  max-width: 72%;
-  padding: 13px 18px;
-  border-radius: 20px;
+  max-width: 75%;
+  padding: 14px 18px;
+  border-radius: 22px;
   line-height: 1.5;
   word-wrap: break-word;
   align-self: flex-start;
   background: rgba(255, 255, 255, 0.22);
   backdrop-filter: blur(5px);
+  border-bottom-left-radius: 6px;
 }
 
 .message.own {
   align-self: flex-end;
   background: #ffffff;
   color: #333;
+  border-bottom-right-radius: 6px;
 }
 
 .message .author {
@@ -234,19 +230,22 @@ header h2 {
 }
 
 .input-area button {
-  width: 54px;
-  height: 54px;
+  width: 48px;
+  height: 48px;
   border: none;
   border-radius: 50%;
   background: #fff;
   color: #667eea;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: bold;
   cursor: pointer;
   transition: 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .input-area button:hover {
-  transform: scale(1.12);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
