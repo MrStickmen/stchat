@@ -1,4 +1,4 @@
-// === ВСТАВЬ СВОЙ firebaseConfig СЮДА ===
+// === ВСТАВЬ СВОЙ firebaseConfig ===
 const firebaseConfig = {
   apiKey: "AIzaSyCSsrbm1-MADGYCBC2il8SLct2lcZQrWCM",
   authDomain: "stchat-bf024.firebaseapp.com",
@@ -18,37 +18,57 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-// === РЕГИСТРАЦИЯ ===
+// === АВТОВХОД НА ВСЕХ СТРАНИЦАХ ===
+onAuthStateChanged(auth, (user) => {
+  const path = window.location.pathname.split('/').pop();
+  if (user && (path === 'login.html' || path === 'register.html' || path === 'index.html')) {
+    window.location.href = 'chat.html';
+  } else if (!user && path === 'chat.html') {
+    window.location.href = 'login.html';
+  }
+});
+
+// === РЕГИСТРАЦИЯ ПО ЛОГИНУ ===
 if (document.getElementById('registerForm')) {
   document.getElementById('registerForm').addEventListener('submit', (e) => {
     e.preventDefault();
-    const email = document.getElementById('regEmail').value.trim();
+    const username = document.getElementById('regUsername').value.trim();
     const password = document.getElementById('regPassword').value;
+
+    if (username.length < 3) return alert('Логин должен быть минимум 3 символа');
+
+    const email = `${username}@stchat.local`; // фиктивный email
 
     createUserWithEmailAndPassword(auth, email, password)
       .then(() => {
-        alert('Аккаунт успешно создан!');
+        alert('Аккаунт создан: ' + username);
         window.location.href = 'chat.html';
       })
-      .catch(err => {
-        alert('Ошибка: ' + err.message);
-      });
+      .catch(err => alert('Ошибка: ' + err.message));
   });
 }
 
-// === ВХОД ===
+// === ВХОД ПО ЛОГИНУ ===
 if (document.getElementById('loginForm')) {
   document.getElementById('loginForm').addEventListener('submit', (e) => {
     e.preventDefault();
-    const email = document.getElementById('loginEmail').value.trim();
+    const username = document.getElementById('loginUsername').value.trim();
     const password = document.getElementById('loginPassword').value;
+
+    const email = `${username}@stchat.local`;
 
     signInWithEmailAndPassword(auth, email, password)
       .then(() => {
         window.location.href = 'chat.html';
       })
       .catch(err => {
-        alert('Ошибка входа: ' + err.message);
+        if (err.code === 'auth/user-not-found') {
+          alert('Логин не найден');
+        } else if (err.code === 'auth/wrong-password') {
+          alert('Неверный пароль');
+        } else {
+          alert('Ошибка: ' + err.message);
+        }
       });
   });
 }
@@ -65,15 +85,14 @@ if (document.getElementById('logoutBtn')) {
 // === ЧАТ ===
 if (document.getElementById('messages')) {
   onAuthStateChanged(auth, (user) => {
-    if (!user) {
-      window.location.href = 'login.html';
-      return;
-    }
+    if (!user) return;
+
+    // Извлекаем логин из email
+    const displayName = user.email.split('@')[0];
 
     const messagesRef = ref(db, 'messages');
     const messagesDiv = document.getElementById('messages');
 
-    // Загрузка сообщений
     onValue(messagesRef, (snapshot) => {
       messagesDiv.innerHTML = '';
       const messages = snapshot.val() || {};
@@ -82,7 +101,7 @@ if (document.getElementById('messages')) {
         const div = document.createElement('div');
         div.className = `message ${msg.uid === user.uid ? 'own' : ''}`;
         div.innerHTML = `
-          <div class="author">${msg.displayName || 'Аноним'}</div>
+          <div class="author">${msg.displayName}</div>
           ${msg.text}
         `;
         messagesDiv.appendChild(div);
@@ -90,7 +109,6 @@ if (document.getElementById('messages')) {
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
 
-    // Отправка сообщения
     document.getElementById('messageForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const input = document.getElementById('messageInput');
@@ -100,7 +118,7 @@ if (document.getElementById('messages')) {
       push(messagesRef, {
         text,
         uid: user.uid,
-        displayName: user.email.split('@')[0],
+        displayName: displayName,
         timestamp: serverTimestamp()
       });
 
