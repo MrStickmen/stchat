@@ -1,0 +1,252 @@
+/* === ОБЩИЕ СТИЛИ === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  min-height: 100vh;
+}
+
+/* === ГЛАВНАЯ === */
+.welcome-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.container {
+  text-align: center;
+  padding: 50px 30px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 100%;
+}
+
+.logo {
+  font-size: 3.8rem;
+  font-weight: 800;
+  margin-bottom: 12px;
+  text-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+}
+
+.container p {
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+  opacity: 0.9;
+}
+
+.buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 14px 32px;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn.primary {
+  background: #fff;
+  color: #667eea;
+}
+
+.btn.primary:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.25);
+}
+
+.btn.secondary {
+  background: transparent;
+  color: white;
+  border: 2.5px solid white;
+}
+
+.btn.secondary:hover {
+  background: white;
+  color: #667eea;
+}
+
+.btn.small {
+  padding: 8px 18px;
+  font-size: 0.9rem;
+}
+
+/* === АВТОРИЗАЦИЯ === */
+.auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.auth-container {
+  background: rgba(255, 255, 255, 0.18);
+  padding: 40px;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 420px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+.auth-container h2 {
+  text-align: center;
+  margin-bottom: 28px;
+  font-size: 2.1rem;
+  font-weight: 700;
+}
+
+.auth-container input {
+  width: 100%;
+  padding: 16px;
+  margin: 12px 0;
+  border: none;
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  font-size: 1rem;
+  outline: none;
+}
+
+.auth-container input::placeholder {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.auth-container button {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.auth-container p {
+  text-align: center;
+  margin-top: 22px;
+  font-size: 0.95rem;
+}
+
+.auth-container a {
+  color: #a0e0ff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* === ЧАТ === */
+.chat-page {
+  margin: 0;
+  padding: 0;
+}
+
+.chat-container {
+  max-width: 900px;
+  margin: 0 auto;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+header {
+  padding: 18px 22px;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+header h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.messages {
+  flex: 1;
+  padding: 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.message {
+  max-width: 72%;
+  padding: 13px 18px;
+  border-radius: 20px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(5px);
+}
+
+.message.own {
+  align-self: flex-end;
+  background: #ffffff;
+  color: #333;
+}
+
+.message .author {
+  font-weight: 700;
+  font-size: 0.88rem;
+  opacity: 0.85;
+  margin-bottom: 5px;
+}
+
+.input-area {
+  display: flex;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.25);
+  gap: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.input-area input {
+  flex: 1;
+  padding: 16px;
+  border: none;
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  font-size: 1rem;
+  outline: none;
+}
+
+.input-area input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.input-area button {
+  width: 54px;
+  height: 54px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  color: #667eea;
+  font-size: 1.4rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.input-area button:hover {
+  transform: scale(1.12);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
