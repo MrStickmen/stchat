@@ -1,251 +1,239 @@
-/* === ОБЩИЕ СТИЛИ === */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Segoe UI', sans-serif;
 }
 
 body {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  min-height: 100vh;
-}
-
-/* === ГЛАВНАЯ === */
-.welcome-page {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.container {
-  text-align: center;
-  padding: 50px 30px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 24px;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-  max-width: 400px;
-  width: 100%;
-}
-
-.logo {
-  font-size: 3.8rem;
-  font-weight: 800;
-  margin-bottom: 30px;
-  text-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
-}
-
-.buttons {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.btn {
-  padding: 14px 32px;
-  border: none;
-  border-radius: 50px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.btn.primary {
-  background: #fff;
-  color: #667eea;
-}
-
-.btn.primary:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.25);
-}
-
-.btn.secondary {
-  background: transparent;
-  color: white;
-  border: 2.5px solid white;
-}
-
-.btn.secondary:hover {
-  background: white;
-  color: #667eea;
-}
-
-.btn.small {
-  padding: 8px 18px;
-  font-size: 0.9rem;
-}
-
-/* === АВТОРИЗАЦИЯ === */
-.auth-page {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.auth-container {
-  background: rgba(255, 255, 255, 0.18);
-  padding: 40px;
-  border-radius: 24px;
-  width: 100%;
-  max-width: 420px;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-}
-
-.auth-container h2 {
-  text-align: center;
-  margin-bottom: 28px;
-  font-size: 2.1rem;
-  font-weight: 700;
-}
-
-.auth-container input {
-  width: 100%;
-  padding: 16px;
-  margin: 12px 0;
-  border: none;
-  border-radius: 50px;
-  background: rgba(255, 255, 255, 0.25);
-  color: white;
-  font-size: 1rem;
-  outline: none;
-}
-
-.auth-container input::placeholder {
-  color: rgba(255, 255, 255, 0.75);
-}
-
-.auth-container button {
-  width: 100%;
-  margin-top: 18px;
-}
-
-.auth-container p {
-  text-align: center;
-  margin-top: 22px;
-  font-size: 0.95rem;
-}
-
-.auth-container a {
-  color: #a0e0ff;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-/* === ЧАТ === */
-.chat-page {
-  margin: 0;
-  padding: 0;
-}
-
-.chat-container {
-  max-width: 900px;
-  margin: 0 auto;
+  background: #f0f2f5;
+  color: #333;
   height: 100vh;
+  overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+}
+
+/* === Левая панель (список чатов) === */
+.sidebar {
+  width: 320px;
+  background: #fff;
+  border-right: 1px solid #ddd;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
 }
 
-header {
-  padding: 18px 22px;
-  background: rgba(0, 0, 0, 0.25);
+.header {
+  padding: 16px;
+  background: #667eea;
+  color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-header h2 {
-  font-size: 1.6rem;
-  font-weight: 700;
+.header h1 {
+  font-size: 1.4rem;
+  font-weight: 600;
 }
 
-.messages {
+.btn-icon {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.chat-list {
   flex: 1;
-  padding: 22px;
+  overflow-y: auto;
+}
+
+.chat-item {
+  padding: 14px 16px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chat-item:hover {
+  background: #f5f5f5;
+}
+
+.chat-item.active {
+  background: #e6f7ff;
+}
+
+.chat-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #667eea;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.chat-info h3 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.chat-info p {
+  font-size: 0.85rem;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+/* === Правая панель (чат) === */
+.main-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #f9f9fb;
+}
+
+.chat-header {
+  padding: 16px;
+  background: white;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chat-header h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.messages-area {
+  flex: 1;
+  padding: 20px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .message {
-  max-width: 75%;
-  padding: 14px 18px;
-  border-radius: 22px;
-  line-height: 1.5;
-  word-wrap: break-word;
+  max-width: 70%;
+  padding: 10px 14px;
+  border-radius: 18px;
+  line-height: 1.4;
   align-self: flex-start;
-  background: rgba(255, 255, 255, 0.22);
-  backdrop-filter: blur(5px);
-  border-bottom-left-radius: 6px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .message.own {
   align-self: flex-end;
-  background: #ffffff;
-  color: #333;
-  border-bottom-right-radius: 6px;
+  background: #667eea;
+  color: white;
 }
 
 .message .author {
-  font-weight: 700;
-  font-size: 0.88rem;
-  opacity: 0.85;
-  margin-bottom: 5px;
+  font-size: 0.8rem;
+  opacity: 0.8;
+  margin-bottom: 4px;
+  font-weight: 600;
 }
 
 .input-area {
   display: flex;
-  padding: 18px;
-  background: rgba(0, 0, 0, 0.25);
-  gap: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 12px;
+  background: white;
+  border-top: 1px solid #ddd;
+  gap: 10px;
 }
 
 .input-area input {
   flex: 1;
-  padding: 16px;
-  border: none;
-  border-radius: 50px;
-  background: rgba(255, 255, 255, 0.25);
-  color: white;
-  font-size: 1rem;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 25px;
   outline: none;
-}
-
-.input-area input::placeholder {
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
 }
 
 .input-area button {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border: none;
   border-radius: 50%;
-  background: #fff;
-  color: #667eea;
-  font-size: 1.3rem;
-  font-weight: bold;
+  background: #667eea;
+  color: white;
+  font-size: 1.2rem;
   cursor: pointer;
-  transition: 0.3s;
+}
+
+/* === Модальные окна === */
+.modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1000;
 }
 
-.input-area button:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+.modal-content {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal h3 {
+  margin-bottom: 16px;
+  font-size: 1.3rem;
+}
+
+.modal input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.modal-buttons button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.modal-buttons .cancel {
+  background: #eee;
+  color: #333;
+}
+
+.modal-buttons .confirm {
+  background: #667eea;
+  color: white;
 }
