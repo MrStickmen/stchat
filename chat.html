@@ -3,51 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>СтЧат</title>
+  <title>Чат — СтЧат</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body class="chat-page">
-  <div class="chat-app">
-    <!-- Левая панель -->
+<body class="chat-body">
+  <div class:="chat-app">
+
+    <!-- 1. ЛЕВЫЙ ПАНЕЛЬ: КНОПКИ + СПИСОК -->
     <div class="sidebar">
-      <div class="header">
-        <h1>СтЧат</h1>
-        <div class="actions">
-          <button id="addFriendBtn" class="action-btn">Друг</button>
-          <button id="createGroupBtn" class="action-btn">Группа</button>
-          <button id="friendRequestsBtn" class="action-btn">Запросы</button>
-          <button id="logoutBtn" class="action-btn">Выйти</button>
-        </div>
+      <div class="top-bar">
+        <button id="addFriendBtn" class="mini-btn">Друг</button>
+        <button id="createGroupBtn" class="mini-btn">Группа</button>
+        <button id="requestsBtn" class="mini-btn">Запросы</button>
+        <button id="logoutBtn" class="mini-btn">Выйти</button>
       </div>
       <div id="chatList" class="chat-list"></div>
     </div>
 
-    <!-- Правая панель -->
-    <div id="mainChat" class="main-chat">
-      <div class="empty-state">
-        <h2>Выберите чат</h2>
-        <p>Начните общение с друзьями или группой</p>
-      </div>
+    <!-- 2. ЦЕНТРАЛЬНЫЙ ПАНЕЛЬ: ЧАТ -->
+    <div id="mainChat" class="main-panel">
+      <div class="empty">Выберите чат</div>
     </div>
+
   </div>
 
   <!-- Модалки -->
-  <div id="friendModal" class="modal" style="display:none;">
-    <div class="modal-content">
+  <div id="friendModal" class="modal" style="display:none">
+    <div class="modal-card">
       <h3>Добавить друга</h3>
       <input type="text" id="friendUsername" placeholder="Логин друга" />
-      <div class="modal-actions">
+      <div class="modal-btns">
         <button class="cancel">Отмена</button>
         <button class="send">Отправить</button>
       </div>
     </div>
   </div>
 
-  <div id="groupModal" class="modal" style="display:none;">
-    <div class="modal-content">
+  <div id="groupModal" class="modal" style="display:none">
+    <div class="modal-card">
       <h3>Создать группу</h3>
-      <input type="text" id="groupName" placeholder="Название группы" />
-      <div class="modal-actions">
+      <input type="text" id="groupName" placeholder="Название" />
+      <div class="modal-btns">
         <button class="cancel">Отмена</button>
         <button class="create">Создать</button>
       </div>
