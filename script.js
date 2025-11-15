@@ -25,7 +25,10 @@ import {
   onValue, 
   update, 
   get, 
-  remove 
+  remove,
+  query,
+  orderByChild,
+  equalTo
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const app = initializeApp(firebaseConfig);
@@ -47,6 +50,7 @@ onAuthStateChanged(auth, user => {
     } else if (path === 'chat.html') {
       loadChats();
       setupMenu();
+      loadFriendRequests(); // ← НОВОЕ: запросы в друзья
     }
   } else {
     if (path === 'chat.html') location.href = 'login.html';
@@ -55,10 +59,15 @@ onAuthStateChanged(auth, user => {
 
 // === РЕГИСТРАЦИЯ ===
 if ($('registerForm')) {
-  $('registerForm').onsubmit = e => {
+  $('registerForm').onsubmit = async e => {
     e.preventDefault();
     const username = $('regUsername').value.trim();
     const password = $('regPassword').value;
+
+    // Проверка: логин занят?
+    const snap = await get(query(ref(db, 'users'), orderByChild('username'), equalTo(username)));
+    if (snap.exists()) return alert('Логин уже занят!');
+
     createUserWithEmailAndPassword(auth, `${username}@stchat.local`, password)
       .then(cred => {
         set(ref(db, `users/${cred.user.uid}`), { username });
@@ -80,50 +89,64 @@ if ($('loginForm')) {
   };
 }
 
-// === ЧАТЫ ===
-async function loadChats() {
+// === ЗАГРУЗКА ЧАТОВ ===
+function loadChats() {
   onValue(ref(db, `users/${currentUser.uid}/chats`), snap => {
     const chats = snap.val() || {};
     $('chatList').innerHTML = '';
     Object.entries(chats).forEach(([id, chat]) => {
       const div = document.createElement('div');
       div.className = 'chat-item';
+      div.dataset.id = id;
       div.onclick = () => openChat(id, chat);
-      div.innerHTML = `<div class="chat-avatar">${chat.type === 'group' ? 'G' : 'U'}</div>
-                       <div><h3>${chat.name}</h3><p>${chat.last || ''}</p></div>`;
+      div.innerHTML = `
+        <div class="chat-avatar">${chat.type === 'group' ? 'G' : 'U'}</div>
+        <div><h3>${chat.name}</h3><p>${chat.last || 'Нет сообщений'}</p></div>
+      `;
       $('chatList').appendChild(div);
     });
-  });
+  }, { onlyOnce: false });
 }
 
+// === ОТКРЫТЬ ЧАТ ===
 function openChat(id, chat) {
   currentChatId = id;
   document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
-  event.target.closest('.chat-item').classList.add('active');
+  document.querySelector(`[data-id="${id}"]`).classList.add('active');
 
   $('mainChat').innerHTML = `
-    <div class="chat-header"><div class="chat-avatar">${chat.type === 'group' ? 'G' : 'U'}</div><h2>${chat.name}</h2></div>
+    <div class="chat-header">
+      <div class="chat-avatar">${chat.type === 'group' ? 'G' : 'U'}</div>
+      <h2>${chat.name}</h2>
+    </div>
     <div class="messages" id="messages"></div>
-    <div class="input-area"><input id="msgInput" placeholder="Сообщение..." /><button>Send</button></div>
+    <div class="input-area">
+      <input id="msgInput" placeholder="Сообщение..." />
+      <button>Send</button>
+    </div>
   `;
 
+  const messagesArea = $('messages');
   onValue(ref(db, `chats/${id}/messages`), snap => {
-    const area = $('messages');
-    area.innerHTML = '';
-    Object.values(snap.val() || {}).forEach(m => {
+    messagesArea.innerHTML = '';
+    const msgs = snap.val() || {};
+    Object.values(msgs).sort((a,b) => a.timestamp - b.timestamp).forEach(m => {
       const div = document.createElement('div');
       div.className = `message ${m.uid === currentUser.uid ? 'own' : ''}`;
-      div.innerHTML = `<div class="author">${m.displayName}</div>${m.text}`;
-      area.appendChild(div);
+      div.innerHTML = `<div class="author">${m.displayName}</div><div>${m.text}</div>`;
+      messagesArea.appendChild(div);
     });
-    area.scrollTop = area.scrollHeight;
+    messagesArea.scrollTop = messagesArea.scrollHeight;
   });
 
   $('mainChat').querySelector('button').onclick = () => {
     const text = $('msgInput').value.trim();
     if (!text) return;
     push(ref(db, `chats/${id}/messages`), {
-      text, uid: currentUser.uid, displayName: currentUser.email.split('@')[0]
+      text,
+      uid: currentUser.uid,
+      displayName: currentUser.email.split('@')[0],
+      timestamp: Date.now()
     });
     update(ref(db, `users/${currentUser.uid}/chats/${id}`), { last: text });
     $('msgInput').value = '';
@@ -134,7 +157,8 @@ function openChat(id, chat) {
 function setupMenu() {
   $('menuBtn').onclick = e => {
     e.stopPropagation();
-    $('menu').style.display = $('menu').style.display === 'block' ? 'none' : 'block';
+    const menu = $('menu');
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
   };
   document.addEventListener('click', () => $('menu').style.display = 'none');
 
@@ -145,22 +169,91 @@ function setupMenu() {
   document.querySelectorAll('.cancel').forEach(b => b.onclick = () => b.closest('.modal').style.display = 'none');
 }
 
-// === ДРУГ / ГРУППА ===
-$('friendModal')?.querySelector('.send').addEventListener('click', async () => {
+// === ДОБАВИТЬ ДРУГА (ИСПРАВЛЕНО) ===
+document.querySelector('#friendModal .send')?.addEventListener('click', async () => {
   const username = $('friendUsername').value.trim();
-  const snap = await get(ref(db, 'users'));
-  const friendUid = Object.keys(snap.val() || {}).find(uid => snap.val()[uid].username === username);
-  if (friendUid) {
-    set(ref(db, `friendRequests/${friendUid}/${currentUser.uid}`), { from: currentUser.email.split('@')[0] });
-    alert('Запрос отправлен!');
-  }
+  if (!username) return;
+
+  // Поиск пользователя
+  const snap = await get(query(ref(db, 'users'), orderByChild('username'), equalTo(username)));
+  const users = snap.val() || {};
+  const friendUid = Object.keys(users)[0];
+
+  if (!friendUid) return alert('Пользователь не найден');
+  if (friendUid === currentUser.uid) return alert('Это вы!');
+
+  // Проверка: уже друзья?
+  const friendCheck = await get(ref(db, `users/${currentUser.uid}/friends/${friendUid}`));
+  if (friendCheck.exists()) return alert('Уже в друзьях');
+
+  // Отправка запроса
+  await set(ref(db, `friendRequests/${friendUid}/${currentUser.uid}`), {
+    from: currentUser.email.split('@')[0],
+    timestamp: Date.now()
+  });
+
+  alert('Запрос отправлен!');
   $('friendModal').style.display = 'none';
+  $('friendUsername').value = '';
 });
 
-$('groupModal')?.querySelector('.create').addEventListener('click', async () => {
+// === СОЗДАТЬ ГРУППУ (БЕЗ ДУБЛЕЙ) ===
+document.querySelector('#groupModal .create')?.addEventListener('click', async () => {
   const name = $('groupName').value.trim();
+  if (!name) return;
+
+  // Проверка: группа с таким именем уже есть?
+  const snap = await get(ref(db, `users/${currentUser.uid}/chats`));
+  const chats = snap.val() || {};
+  const exists = Object.values(chats).some(c => c.type === 'group' && c.name === name);
+  if (exists) return alert('Группа с таким названием уже есть!');
+
   const chatRef = push(ref(db, 'chats'));
-  await set(chatRef, { type: 'group', name });
-  await set(ref(db, `users/${currentUser.uid}/chats/${chatRef.key}`), { type: 'group', name });
+  await set(chatRef, { type: 'group', name, creator: currentUser.uid });
+  await set(ref(db, `users/${currentUser.uid}/chats/${chatRef.key}`), {
+    type: 'group',
+    name,
+    last: 'Группа создана'
+  });
+
+  alert('Группа создана!');
   $('groupModal').style.display = 'none';
+  $('groupName').value = '';
 });
+
+// === ЗАПРОСЫ В ДРУЗЬЯ (НОВОЕ) ===
+async function loadFriendRequests() {
+  onValue(ref(db, `friendRequests/${currentUser.uid}`), async snap => {
+    const requests = snap.val();
+    if (!requests) return;
+
+    // Добавляем кнопку "Запросы" в меню
+    if (!$('requestsBtn')) {
+      const btn = document.createElement('button');
+      btn.id = 'requestsBtn';
+      btn.textContent = 'Запросы в друзья';
+      $('menu').appendChild(btn);
+
+      btn.onclick = async () => {
+        $('menu').style.display = 'none';
+        for (const [uid, req] of Object.entries(requests)) {
+          if (confirm(`${req.from} хочет дружить. Принять?`)) {
+            // Добавляем в друзья
+            await set(ref(db, `users/${currentUser.uid}/friends/${uid}`), true);
+            await set(ref(db, `users/${uid}/friends/${currentUser.uid}`), true);
+
+            // Создаём личный чат
+            const chatRef = push(ref(db, 'chats'));
+            await set(chatRef, { type: 'private' });
+            await set(ref(db, `users/${currentUser.uid}/chats/${chatRef.key}`), { type: 'private', name: req.from });
+            await set(ref(db, `users/${uid}/chats/${chatRef.key}`), { type: 'private', name: currentUser.email.split('@')[0] });
+
+            await remove(ref(db, `friendRequests/${currentUser.uid}/${uid}`));
+          } else {
+            await remove(ref(db, `friendRequests/${currentUser.uid}/${uid}`));
+          }
+        }
+      };
+    }
+  });
+}
