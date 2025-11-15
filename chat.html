@@ -7,20 +7,23 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="chat-body">
-  <div class:="chat-app">
+  <div class="chat-app">
 
-    <!-- 1. ЛЕВЫЙ ПАНЕЛЬ: КНОПКИ + СПИСОК -->
+    <!-- 1. ЛЕВЫЙ ПРЯМОУГОЛЬНИК: СПИСОК ЧАТОВ -->
     <div class="sidebar">
-      <div class="top-bar">
-        <button id="addFriendBtn" class="mini-btn">Друг</button>
-        <button id="createGroupBtn" class="mini-btn">Группа</button>
-        <button id="requestsBtn" class="mini-btn">Запросы</button>
-        <button id="logoutBtn" class="mini-btn">Выйти</button>
+      <!-- 3. МАЛЕНЬКИЙ ПРЯМОУГОЛЬНИК: КНОПКИ (в меню) -->
+      <div class="menu-header">
+        <button id="menuBtn" class="icon-btn">⋮</button>
+        <div id="menu" class="menu">
+          <button id="addFriendBtn">Добавить друга</button>
+          <button id="createGroupBtn">Создать группу</button>
+          <button id="logoutBtn">Выйти</button>
+        </div>
       </div>
       <div id="chatList" class="chat-list"></div>
     </div>
 
-    <!-- 2. ЦЕНТРАЛЬНЫЙ ПАНЕЛЬ: ЧАТ -->
+    <!-- 2. ЦЕНТРАЛЬНЫЙ ПРЯМОУГОЛЬНИК: ЧАТ -->
     <div id="mainChat" class="main-panel">
       <div class="empty">Выберите чат</div>
     </div>
