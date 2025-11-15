@@ -18,12 +18,16 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-// === АВТОВХОД НА ВСЕХ СТРАНИЦАХ ===
+// === ГЛОБАЛЬНЫЙ АВТОВХОД (НА ВСЕХ СТРАНИЦАХ) ===
 onAuthStateChanged(auth, (user) => {
   const path = window.location.pathname.split('/').pop();
-  if (user && (path === 'login.html' || path === 'register.html' || path === 'index.html')) {
+
+  // Если пользователь авторизован → сразу в чат
+  if (user && (path === 'index.html' || path === '' || path === 'login.html' || path === 'register.html')) {
     window.location.href = 'chat.html';
-  } else if (!user && path === 'chat.html') {
+  }
+  // Если не авторизован и на чате → на логин
+  else if (!user && path === 'chat.html') {
     window.location.href = 'login.html';
   }
 });
@@ -37,7 +41,7 @@ if (document.getElementById('registerForm')) {
 
     if (username.length < 3) return alert('Логин должен быть минимум 3 символа');
 
-    const email = `${username}@stchat.local`; // фиктивный email
+    const email = `${username}@stchat.local`;
 
     createUserWithEmailAndPassword(auth, email, password)
       .then(() => {
@@ -87,7 +91,6 @@ if (document.getElementById('messages')) {
   onAuthStateChanged(auth, (user) => {
     if (!user) return;
 
-    // Извлекаем логин из email
     const displayName = user.email.split('@')[0];
 
     const messagesRef = ref(db, 'messages');
