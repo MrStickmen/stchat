@@ -3,38 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Чат — СтЧат</title>
+  <title>СтЧат</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="chat-page">
-  <div class="chat-container">
+  <div class="chat-app">
     <!-- Левая панель -->
     <div class="sidebar">
-      <header>
-        <h2>СтЧат</h2>
-        <div>
-          <button id="addFriendBtn" class="btn small">Друг</button>
-          <button id="createGroupBtn" class="btn small">Группа</button>
-          <button id="logoutBtn" class="btn small">Выйти</button>
+      <div class="header">
+        <h1>СтЧат</h1>
+        <div class="actions">
+          <button id="addFriendBtn" class="action-btn">Друг</button>
+          <button id="createGroupBtn" class="action-btn">Группа</button>
+          <button id="friendRequestsBtn" class="action-btn">Запросы</button>
+          <button id="logoutBtn" class="action-btn">Выйти</button>
         </div>
-      </header>
+      </div>
       <div id="chatList" class="chat-list"></div>
     </div>
 
     <!-- Правая панель -->
     <div id="mainChat" class="main-chat">
-      <div class="empty">Выберите чат</div>
+      <div class="empty-state">
+        <h2>Выберите чат</h2>
+        <p>Начните общение с друзьями или группой</p>
+      </div>
     </div>
   </div>
 
-  <!-- Модальные окна -->
+  <!-- Модалки -->
   <div id="friendModal" class="modal" style="display:none;">
     <div class="modal-content">
       <h3>Добавить друга</h3>
       <input type="text" id="friendUsername" placeholder="Логин друга" />
-      <div class="modal-buttons">
+      <div class="modal-actions">
         <button class="cancel">Отмена</button>
-        <button class="confirm">Отправить</button>
+        <button class="send">Отправить</button>
       </div>
     </div>
   </div>
@@ -43,9 +47,9 @@
     <div class="modal-content">
       <h3>Создать группу</h3>
       <input type="text" id="groupName" placeholder="Название группы" />
-      <div class="modal-buttons">
+      <div class="modal-actions">
         <button class="cancel">Отмена</button>
-        <button class="confirm">Создать</button>
+        <button class="create">Создать</button>
       </div>
     </div>
   </div>
