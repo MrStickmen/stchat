@@ -6,15 +6,15 @@
   <title>Регистрация — СтЧат</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body class="auth-page">
-  <div class="auth-container">
+<body class="auth">
+  <div class="card">
     <h2>Регистрация</h2>
     <form id="registerForm">
-      <input type="text" placeholder="Логин (3+ символа)" id="regUsername" required minlength="3" />
-      <input type="password" placeholder="Пароль (6+ символов)" id="regPassword" required minlength="6" />
-      <button type="submit" class="btn primary">Создать аккаунт</button>
+      <input type="text" id="regUsername" placeholder="Логин (3+ символа)" required minlength="3" />
+      <input type="password" id="regPassword" placeholder="Пароль (6+ символов)" required minlength="6" />
+      <button type="submit" class="btn">Создать</button>
     </form>
-    <p>Уже есть аккаунт? <a href="login.html">Войти</a></p>
+    <p>Есть аккаунт? <a href="login.html">Войти</a></p>
   </div>
   <script type="module" src="script.js"></script>
 </body>
