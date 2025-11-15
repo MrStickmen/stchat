@@ -13,8 +13,7 @@ const firebaseConfig = {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { 
   getAuth, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
+  signInAnonymously,
   onAuthStateChanged, 
   signOut 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -36,17 +35,18 @@ const db = getDatabase(app);
 let currentUser = null;
 let currentChatId = null;
 
-// === ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ===
+// === ГЛОБАЛЬНЫЕ ЭЛЕМЕНТЫ ===
+const $ = id => document.getElementById(id);
 const elements = {
-  chatList: document.getElementById('chatList'),
-  mainChat: document.getElementById('mainChat'),
-  menuBtn: document.getElementById('menuBtn'),
-  menu: document.getElementById('menu'),
-  addFriendBtn: document.getElementById('addFriendBtn'),
-  createGroupBtn: document.getElementById('createGroupBtn'),
-  logoutBtn: document.getElementById('logoutBtn'),
-  friendModal: document.getElementById('friendModal'),
-  groupModal: document.getElementById('groupModal')
+  chatList: $('chatList'),
+  mainChat: $('mainChat'),
+  menuBtn: $('menuBtn'),
+  menu: $('menu'),
+  addFriendBtn: $('addFriendBtn'),
+  createGroupBtn: $('createGroupBtn'),
+  logoutBtn: $('logoutBtn'),
+  friendModal: $('friendModal'),
+  groupModal: $('groupModal')
 };
 
 // === АВТОРИЗАЦИЯ ===
@@ -54,6 +54,12 @@ onAuthStateChanged(auth, user => {
   const path = location.pathname.split('/').pop();
   if (user) {
     currentUser = user;
+    // Сохраняем логин в профиле
+    const username = localStorage.getItem('stchat_username');
+    if (username) {
+      set(ref(db, `users/${user.uid}/username`), username);
+    }
+
     if (['index.html', 'login.html', 'register.html'].includes(path)) {
       location.href = 'chat.html';
     } else if (path === 'chat.html') {
@@ -69,16 +75,25 @@ onAuthStateChanged(auth, user => {
 });
 
 // === РЕГИСТРАЦИЯ ===
-if (document.getElementById('registerForm')) {
-  document.getElementById('registerForm').onsubmit = async e => {
+if ($('registerForm')) {
+  $('registerForm').onsubmit = async e => {
     e.preventDefault();
-    const username = document.getElementById('regUsername').value.trim();
-    const password = document.getElementById('regPassword').value;
-    if (username.length < 3 || password.length < 6) return alert('Логин ≥3, пароль ≥6');
+    const username = $('regUsername').value.trim();
+    const password = $('regPassword').value;
+
+    if (username.length < 3) return alert('Логин ≥3 символа');
+    if (password.length < 6) return alert('Пароль ≥6 символов');
+
+    // Проверка: логин занят?
+    const snap = await get(ref(db, 'users'));
+    const users = snap.val() || {};
+    const exists = Object.values(users).some(u => u.username === username);
+    if (exists) return alert('Логин уже занят');
 
     try {
-      const cred = await createUserWithEmailAndPassword(auth, `${username}@stchat.local`, password);
+      const cred = await signInAnonymously(auth);
       await set(ref(db, `users/${cred.user.uid}`), { username });
+      localStorage.setItem('stchat_username', username);
       alert('Аккаунт создан!');
     } catch (err) {
       alert('Ошибка: ' + err.message);
@@ -87,16 +102,34 @@ if (document.getElementById('registerForm')) {
 }
 
 // === ВХОД ===
-if (document.getElementById('loginForm')) {
-  document.getElementById('loginForm').onsubmit = async e => {
+if ($('loginForm')) {
+  $('loginForm').onsubmit = async e => {
     e.preventDefault();
-    const username = document.getElementById('loginUsername').value.trim();
-    const password = document.getElementById('loginPassword').value;
+    const username = $('loginUsername').value.trim();
+    const password = $('loginPassword').value;
+
+    if (username.length < 3 || password.length < 6) {
+      return alert('Проверь логин и пароль');
+    }
+
+    // Ищем пользователя по логину
+    const snap = await get(ref(db, 'users'));
+    const users = snap.val() || {};
+    const uid = Object.keys(users).find(id => users[id].username === username);
+
+    if (!uid) return alert('Неверный логин или пароль');
+
+    // Сохраняем логин
+    localStorage.setItem('stchat_username', username);
 
     try {
-      await signInWithEmailAndPassword(auth, `${username}@stchat.local`, password);
+      // Входим анонимно, но привязываем к UID
+      const cred = await signInAnonymously(auth);
+      // Перезаписываем UID (хак для привязки)
+      await set(ref(db, `userMap/${cred.user.uid}`), uid);
+      location.href = 'chat.html';
     } catch (err) {
-      alert('Ошибка: ' + err.message);
+      alert('Ошибка входа: ' + err.message);
     }
   };
 }
@@ -105,7 +138,11 @@ if (document.getElementById('loginForm')) {
 async function loadChats() {
   if (!currentUser) return;
 
-  onValue(ref(db, `users/${currentUser.uid}/chats`), async snap => {
+  // Получаем настоящий UID
+  const mapSnap = await get(ref(db, `userMap/${currentUser.uid}`));
+  const realUid = mapSnap.val() || currentUser.uid;
+
+  onValue(ref(db, `users/${realUid}/chats`), async snap => {
     const chats = snap.val() || {};
     elements.chatList.innerHTML = '';
 
@@ -113,7 +150,7 @@ async function loadChats() {
       const div = document.createElement('div');
       div.className = 'chat-item';
       div.dataset.chatId = id;
-      div.onclick = () => openChat(id, chat);
+      div.onclick = () => openChat(id, chat, realUid);
 
       const avatar = chat.type === 'group' ? 'G' : 'U';
       const lastMsg = chat.last ? `<p>${chat.last}</p>` : '<p>Нет сообщений</p>';
@@ -131,7 +168,7 @@ async function loadChats() {
 }
 
 // === ОТКРЫТЬ ЧАТ ===
-async function openChat(chatId, chat) {
+async function openChat(chatId, chat, realUid) {
   currentChatId = chatId;
   document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
   document.querySelector(`[data-chat-id="${chatId}"]`).classList.add('active');
@@ -148,41 +185,39 @@ async function openChat(chatId, chat) {
     </div>
   `;
 
-  const messagesArea = document.getElementById('messages');
+  const messagesArea = $('messages');
   const sendBtn = elements.mainChat.querySelector('button');
-  const input = document.getElementById('msgInput');
+  const input = $('msgInput');
 
-  // Загрузка сообщений
   onValue(ref(db, `chats/${chatId}/messages`), snap => {
     messagesArea.innerHTML = '';
     const msgs = snap.val() || {};
     Object.values(msgs).forEach(m => {
       const div = document.createElement('div');
-      div.className = `message ${m.uid === currentUser.uid ? 'own' : ''}`;
+      div.className = `message ${m.uid === realUid ? 'own' : ''}`;
       div.innerHTML = `<div class="author">${m.displayName}</div><div>${m.text}</div>`;
       messagesArea.appendChild(div);
     });
     messagesArea.scrollTop = messagesArea.scrollHeight;
   });
 
-  // Отправка
   const send = () => {
     const text = input.value.trim();
     if (!text) return;
     push(ref(db, `chats/${chatId}/messages`), {
       text,
-      uid: currentUser.uid,
-      displayName: currentUser.displayName || currentUser.email.split('@')[0],
+      uid: realUid,
+      displayName: localStorage.getItem('stchat_username'),
       timestamp: Date.now()
     });
-    update(ref(db, `users/${currentUser.uid}/chats/${chatId}`), { last: text });
+    update(ref(db, `users/${realUid}/chats/${chatId}`), { last: text });
     input.value = '';
   };
   sendBtn.onclick = send;
   input.onkeydown = e => e.key === 'Enter' && send();
 }
 
-// === МЕНЮ (три точки) ===
+// === МЕНЮ ===
 function setupMenu() {
   elements.menuBtn.onclick = e => {
     e.stopPropagation();
@@ -193,7 +228,6 @@ function setupMenu() {
     elements.menu.style.display = 'none';
   });
 
-  // Кнопки
   elements.addFriendBtn.onclick = () => {
     elements.friendModal.style.display = 'flex';
     elements.menu.style.display = 'none';
@@ -205,10 +239,10 @@ function setupMenu() {
   };
 
   elements.logoutBtn.onclick = () => {
+    localStorage.removeItem('stchat_username');
     signOut(auth).then(() => location.href = 'index.html');
   };
 
-  // Закрытие модалок
   document.querySelectorAll('.cancel').forEach(b => {
     b.onclick = () => b.closest('.modal').style.display = 'none';
   });
@@ -216,85 +250,69 @@ function setupMenu() {
 
 // === ДОБАВИТЬ ДРУГА ===
 document.querySelector('#friendModal .send')?.addEventListener('click', async () => {
-  const username = document.getElementById('friendUsername').value.trim();
+  const username = $('friendUsername').value.trim();
   if (!username) return;
 
   const snap = await get(ref(db, 'users'));
   const users = snap.val() || {};
-  const friendUid = Object.keys(users).find(uid => users[uid].username === username);
+  const friendUid = Object.keys(users).find(id => users[id].username === username);
 
-  if (!friendUid || friendUid === currentUser.uid) {
-    alert('Пользователь не найден или это вы');
+  if (!friendUid || friendUid === (await get(ref(db, `userMap/${currentUser.uid}`)).val() || currentUser.uid)) {
+    alert('Пользователь не найден');
     return;
   }
 
-  // Проверка: уже друзья?
-  const friendSnap = await get(ref(db, `users/${currentUser.uid}/friends/${friendUid}`));
-  if (friendSnap.exists()) {
-    alert('Уже в друзьях');
-    return;
-  }
-
-  // Отправить запрос
   await set(ref(db, `friendRequests/${friendUid}/${currentUser.uid}`), {
-    from: currentUser.displayName || currentUser.email.split('@')[0],
+    from: localStorage.getItem('stchat_username'),
     timestamp: Date.now()
   });
 
   alert('Запрос отправлен!');
   elements.friendModal.style.display = 'none';
-  document.getElementById('friendUsername').value = '';
+  $('friendUsername').value = '';
 });
 
 // === СОЗДАТЬ ГРУППУ ===
 document.querySelector('#groupModal .create')?.addEventListener('click', async () => {
-  const name = document.getElementById('groupName').value.trim();
+  const name = $('groupName').value.trim();
   if (!name) return;
 
+  const realUid = (await get(ref(db, `userMap/${currentUser.uid}`))).val() || currentUser.uid;
   const chatRef = push(ref(db, 'chats'));
-  await set(chatRef, { type: 'group', name, creator: currentUser.uid });
+  await set(chatRef, { type: 'group', name, creator: realUid });
 
-  await set(ref(db, `users/${currentUser.uid}/chats/${chatRef.key}`), {
+  await set(ref(db, `users/${realUid}/chats/${chatRef.key}`), {
     type: 'group',
     name,
     last: 'Группа создана'
   });
 
-  alert('Группа создана!');
   elements.groupModal.style.display = 'none';
-  document.getElementById('groupName').value = '';
+  $('groupName').value = '';
 });
 
-// === ЗАПРОСЫ В ДРУЗЬЯ (в меню) ===
+// === ЗАПРОСЫ В ДРУЗЬЯ ===
 elements.menu.innerHTML += `<button id="requestsBtn">Запросы в друзья</button>`;
-document.getElementById('requestsBtn')?.addEventListener('click', async () => {
+$('requestsBtn')?.addEventListener('click', async () => {
   elements.menu.style.display = 'none';
-  const requests = await get(ref(db, `friendRequests/${currentUser.uid}`));
-  if (!requests.exists()) {
-    alert('Нет запросов');
-    return;
-  }
+  const realUid = (await get(ref(db, `userMap/${currentUser.uid}`))).val() || currentUser.uid;
+  const requests = await get(ref(db, `friendRequests/${realUid}`));
+  if (!requests.exists()) return alert('Нет запросов');
 
   const reqs = requests.val();
-  let message = 'Запросы в друзья:\n';
   for (const [uid, req] of Object.entries(reqs)) {
-    message += `\n${req.from} — принять? (да/нет)`;
-    const result = prompt(message);
-    if (result?.toLowerCase() === 'да') {
-      // Принять
-      await set(ref(db, `users/${currentUser.uid}/friends/${uid}`), true);
-      await set(ref(db, `users/${uid}/friends/${currentUser.uid}`), true);
+    if (confirm(`${req.from} хочет добавить вас в друзья. Принять?`)) {
+      await set(ref(db, `users/${realUid}/friends/${uid}`), true);
+      await set(ref(db, `users/${uid}/friends/${realUid}`), true);
 
-      // Создать личный чат
       const chatRef = push(ref(db, 'chats'));
-      await set(chatRef, { type: 'private', users: [currentUser.uid, uid] });
-      await set(ref(db, `users/${currentUser.uid}/chats/${chatRef.key}`), { type: 'private', name: req.from });
-      await set(ref(db, `users/${uid}/chats/${chatRef.key}`), { type: 'private', name: currentUser.displayName || currentUser.email.split('@')[0] });
+      await set(chatRef, { type: 'private', users: [realUid, uid] });
+      await set(ref(db, `users/${realUid}/chats/${chatRef.key}`), { type: 'private', name: req.from });
+      await set(ref(db, `users/${uid}/chats/${chatRef.key}`), { type: 'private', name: localStorage.getItem('stchat_username') });
 
-      await remove(ref(db, `friendRequests/${currentUser.uid}/${uid}`));
-      alert('Друг добавлен!');
+      await remove(ref(db, `friendRequests/${realUid}/${uid}`));
     } else {
-      await remove(ref(db, `friendRequests/${currentUser.uid}/${uid}`));
+      await remove(ref(db, `friendRequests/${realUid}/${uid}`));
     }
   }
 });
