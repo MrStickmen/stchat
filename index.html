@@ -4,16 +4,539 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>СтЧат</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'SF Pro Display', -apple-system, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 400px;
+      display: none;
+    }
+
+    .container.active {
+      display: block;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(16px);
+      border-radius: 24px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    h1 { font-size: 3rem; margin-bottom: 16px; }
+    h2 { font-size: 2rem; margin-bottom: 24px; }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 50px;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      font-size: 1rem;
+    }
+
+    input::placeholder { color: rgba(255,255,255,0.7); }
+
+    .btn {
+      padding: 14px;
+      border: none;
+      border-radius: 50px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 70%;
+      margin: 20px auto 0;
+      display: block;
+      background: white;
+      color: #667eea;
+    }
+
+    .btn.outline {
+      background: transparent;
+      color: white;
+      border: 2px solid white;
+    }
+
+    .link { color: #fff; text-decoration: underline; cursor: pointer; }
+
+    /* ЧАТ */
+    .chat-body { padding: 0; height: 100vh; display: flex; }
+    .chat-app {
+      flex: 1;
+      display: flex;
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(12px);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 16px 32px rgba(0,0,0,0.3);
+      margin: 16px;
+    }
+
+    .sidebar {
+      width: 300px;
+      background: rgba(255,255,255,0.15);
+      border-right: 1px solid rgba(255,255,255,0.2);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .menu-header {
+      padding: 14px;
+      background: rgba(0,0,0,0.15);
+      position: relative;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .menu {
+      position: absolute;
+      top: 50px; right: 14px;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(16px);
+      border-radius: 16px;
+      padding: 12px 0;
+      width: 180px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      display: none;
+      z-index: 100;
+    }
+
+    .menu button {
+      width: 100%;
+      padding: 12px 20px;
+      background: none;
+      border: none;
+      color: white;
+      text-align: left;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+
+    .chat-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+    .chat-item {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .chat-item:hover { background: rgba(255,255,255,0.15); }
+    .chat-item.active { background: rgba(255,255,255,0.25); border-left: 3px solid white; }
+
+    .chat-avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: #667eea;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    .main-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .empty {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .chat-header {
+      padding: 16px;
+      background: rgba(0,0,0,0.15);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message {
+      max-width: 70%;
+      padding: 10px 14px;
+      border-radius: 18px;
+      align-self: flex-start;
+      background: rgba(255,255,255,0.25);
+      backdrop-filter: blur(6px);
+    }
+
+    .message.own {
+      align-self: flex-end;
+      background: white;
+      color: #333;
+    }
+
+    .input-area {
+      display: flex;
+      padding: 14px;
+      background: rgba(0,0,0,0.2);
+      gap: 10px;
+      border-top: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 50px;
+      background: rgba(255,255,255,0.25);
+      color: white;
+    }
+
+    .input-area button {
+      width: 44px; height: 44px;
+      border: none;
+      border-radius: 50%;
+      background: white;
+      color: #667eea;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
+    .modal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      display: none;
+    }
+
+    .modal.active { display: flex; }
+
+    .modal-card {
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(16px);
+      padding: 28px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 360px;
+      box-shadow: 0 16px 32px rgba(0,0,0,0.3);
+    }
+
+    .modal-btns {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .modal-btns button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 50px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .modal-btns .cancel { background: rgba(255,255,255,0.2); color: white; }
+    .modal-btns .send,
+    .modal-btns .create { background: white; color: #667eea; }
+
+    #debug {
+      margin-top: 10px;
+      font-size: 0.8rem;
+      color: #ff6b6b;
+    }
+  </style>
 </head>
-<body class="welcome">
-  <div class="card">
-    <h1>СтЧат</h1>
-    <p>Общайся с друзьями и группами</p>
-    <div class="btns">
-      <a href="login.html" class="btn">Войти</a>
-      <a href="register.html" class="btn outline">Регистрация</a>
+<body>
+
+  <!-- ГЛАВНАЯ -->
+  <div id="welcome" class="container active">
+    <div class="card">
+      <h1>СтЧат</h1>
+      <p>Общайся с друзьями и группами</p>
+      <button class="btn" onclick="show('login')">Войти</button>
+      <button class="btn outline" onclick="show('register')">Регистрация</button>
     </div>
   </div>
+
+  <!-- ВХОД -->
+  <div id="login" class="container">
+    <div class="card">
+      <h2>Вход</h2>
+      <form id="loginForm">
+        <input type="text" id="loginUsername" placeholder="Логин" required />
+        <input type="password" id="loginPassword" placeholder="Пароль" required />
+        <button type="submit" class="btn">Войти</button>
+      </form>
+      <p>Нет аккаунта? <span class="link" onclick="show('register')">Зарегистрироваться</span></p>
+      <div id="debug"></div>
+    </div>
+  </div>
+
+  <!-- РЕГИСТРАЦИЯ -->
+  <div id="register" class="container">
+    <div class="card">
+      <h2>Регистрация</h2>
+      <form id="registerForm">
+        <input type="text" id="regUsername" placeholder="Логин (3+ символа)" required minlength="3" />
+        <input type="password" id="regPassword" placeholder="Пароль (6+ символов)" required minlength="6" />
+        <button type="submit" class="btn">Создать</button>
+      </form>
+      <p>Есть аккаунт? <span class="link" onclick="show('login')">Войти</span></p>
+      <div id="debug"></div>
+    </div>
+  </div>
+
+  <!-- ЧАТ -->
+  <div id="chat" class="container chat-body">
+    <div class="chat-app">
+      <div class="sidebar">
+        <div class="menu-header">
+          <button id="menuBtn" class="icon-btn">⋮</button>
+          <div id="menu" class="menu">
+            <button id="addFriendBtn">Добавить друга</button>
+            <button id="createGroupBtn">Создать группу</button>
+            <button id="logoutBtn">Выйти</button>
+          </div>
+        </div>
+        <div id="chatList" class="chat-list"></div>
+      </div>
+      <div id="mainChat" class="main-panel">
+        <div class="empty">Выберите чат</div>
+      </div>
+    </div>
+
+    <div id="friendModal" class="modal">
+      <div class="modal-card">
+        <h3>Добавить друга</h3>
+        <input type="text" id="friendUsername" placeholder="Логин друга" />
+        <div class="modal-btns">
+          <button class="cancel">Отмена</button>
+          <button class="send">Отправить</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="groupModal" class="modal">
+      <div class="modal-card">
+        <h3>Создать группу</h3>
+        <input type="text" id="groupName" placeholder="Название" />
+        <div class="modal-btns">
+          <button class="cancel">Отмена</button>
+          <button class="create">Создать</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // === FIREBASE CONFIG ===
+    const firebaseConfig = {
+      apiKey: "ТВОЙ_API_KEY",
+      authDomain: "ТВОЙ_ПРОЕКТ.firebaseapp.com",
+      databaseURL: "https://ТВОЙ_ПРОЕКТ-default-rtdb.firebaseio.com",
+      projectId: "ТВОЙ_ПРОЕКТ",
+      storageBucket: "ТВОЙ_ПРОЕКТ.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef123456"
+    };
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { 
+      getAuth, 
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { 
+      getDatabase, 
+      ref, 
+      set, 
+      get,
+      query,
+      orderByChild,
+      equalTo,
+      push,
+      onValue,
+      update,
+      remove
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    const $ = id => document.getElementById(id);
+    const debug = msg => console.log('[СтЧат]', msg);
+
+    const show = id => {
+      document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+      $(id).classList.add('active');
+    };
+
+    let isCreatingProfile = false;
+
+    onAuthStateChanged(auth, async user => {
+      if (user && !isCreatingProfile) {
+        const profileSnap = await get(ref(db, `users/${user.uid}`));
+        if (!profileSnap.exists()) {
+          isCreatingProfile = true;
+          const pending = JSON.parse(localStorage.getItem('pendingProfile') || '{}');
+          if (pending.username) {
+            await set(ref(db, `users/${user.uid}`), { username: pending.username });
+            localStorage.removeItem('pendingProfile');
+          }
+          isCreatingProfile = false;
+        }
+        show('chat');
+        loadChats();
+        setupMenu();
+      } else {
+        if (!['welcome', 'login', 'register'].includes(location.hash.slice(1))) {
+          show('welcome');
+        }
+      }
+    });
+
+    // РЕГИСТРАЦИЯ
+    $('registerForm')?.addEventListener('submit', async e => {
+      e.preventDefault();
+      const username = $('regUsername').value.trim();
+      const password = $('regPassword').value;
+
+      const snap = await get(query(ref(db, 'users'), orderByChild('username'), equalTo(username)));
+      if (snap.exists()) return alert('Логин занят');
+
+      localStorage.setItem('pendingProfile', JSON.stringify({ username }));
+      await createUserWithEmailAndPassword(auth, `${username}@stchat.local`, password);
+    });
+
+    // ВХОД
+    $('loginForm')?.addEventListener('submit', async e => {
+      e.preventDefault();
+      const username = $('loginUsername').value.trim();
+      const password = $('loginPassword').value;
+      await signInWithEmailAndPassword(auth, `${username}@stchat.local`, password);
+    });
+
+    // ЧАТЫ
+    function loadChats() {
+      onValue(ref(db, `users/${auth.currentUser.uid}/chats`), snap => {
+        const chats = snap.val() || {};
+        $('chatList').innerHTML = '';
+        Object.entries(chats).forEach(([id, chat]) => {
+          const div = document.createElement('div');
+          div.className = 'chat-item';
+          div.onclick = () => openChat(id, chat);
+          div.innerHTML = `<div class="chat-avatar">${chat.type === 'group' ? 'G' : 'U'}</div>
+                           <div><h3>${chat.name}</h3><p>${chat.last || ''}</p></div>`;
+          $('chatList').appendChild(div);
+        });
+      });
+    }
+
+    function openChat(id, chat) {
+      $('mainChat').innerHTML = `
+        <div class="chat-header"><div class="chat-avatar">${chat.type === 'group' ? 'G' : 'U'}</div><h2>${chat.name}</h2></div>
+        <div class="messages" id="messages"></div>
+        <div class="input-area"><input id="msgInput" placeholder="Сообщение..." /><button>Send</button></div>
+      `;
+
+      const messages = $('messages');
+      onValue(ref(db, `chats/${id}/messages`), snap => {
+        messages.innerHTML = '';
+        Object.values(snap.val() || {}).forEach(m => {
+          const div = document.createElement('div');
+          div.className = `message ${m.uid === auth.currentUser.uid ? 'own' : ''}`;
+          div.innerHTML = m.text;
+          messages.appendChild(div);
+        });
+        messages.scrollTop = messages.scrollHeight;
+      });
+
+      $('mainChat').querySelector('button').onclick = () => {
+        const text = $('msgInput').value.trim();
+        if (!text) return;
+        push(ref(db, `chats/${id}/messages`), { text, uid: auth.currentUser.uid, timestamp: Date.now() });
+        update(ref(db, `users/${auth.currentUser.uid}/chats/${id}`), { last: text });
+        $('msgInput').value = '';
+      };
+    }
+
+    function setupMenu() {
+      $('menuBtn').onclick = e => {
+        e.stopPropagation();
+        const menu = $('menu');
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+      };
+      document.addEventListener('click', () => $('menu').style.display = 'none');
+
+      $('addFriendBtn').onclick = () => $('friendModal').classList.add('active');
+      $('createGroupBtn').onclick = () => $('groupModal').classList.add('active');
+      $('logoutBtn').onclick = () => signOut(auth).then(() => show('welcome'));
+
+      document.querySelectorAll('.cancel').forEach(b => b.onclick = () => b.closest('.modal').classList.remove('active'));
+    }
+
+    // ДРУГ / ГРУППА
+    $('friendModal')?.querySelector('.send').addEventListener('click', async () => {
+      const username = $('friendUsername').value.trim();
+      const snap = await get(query(ref(db, 'users'), orderByChild('username'), equalTo(username)));
+      const friendUid = Object.keys(snap.val() || {})[0];
+      if (friendUid) {
+        set(ref(db, `friendRequests/${friendUid}/${auth.currentUser.uid}`), { from: auth.currentUser.email.split('@')[0] });
+      }
+      $('friendModal').classList.remove('active');
+    });
+
+    $('groupModal')?.querySelector('.create').addEventListener('click', async () => {
+      const name = $('groupName').value.trim();
+      const chatRef = push(ref(db, 'chats'));
+      await set(chatRef, { type: 'group', name });
+      await set(ref(db, `users/${auth.currentUser.uid}/chats/${chatRef.key}`), { type: 'group', name });
+      $('groupModal').classList.remove('active');
+    });
+  </script>
 </body>
 </html>
