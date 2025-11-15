@@ -38,33 +38,34 @@ const debug = msg => {
   console.log('[СтЧат]', msg);
 };
 
-// === ГЛОБАЛЬНЫЙ ОБРАБОТЧИК АВТОРИЗАЦИИ ===
-onAuthStateChanged(auth, async user => {
-  if (user) {
-    debug('Пользователь авторизован: ' + user.uid);
+// === ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ===
+let isCreatingProfile = false;
 
-    // Проверяем: профиль уже есть?
+onAuthStateChanged(auth, async user => {
+  if (user && !isCreatingProfile) {
+    debug('onAuthStateChanged: Пользователь авторизован: ' + user.uid);
+
     const profileSnap = await get(ref(db, `users/${user.uid}`));
     if (!profileSnap.exists()) {
-      // ЕСЛИ НЕТ — СОЗДАЁМ СЕЙЧАС (разрешение есть!)
+      isCreatingProfile = true;
       const pending = JSON.parse(localStorage.getItem('pendingProfile') || '{}');
       if (pending.username) {
-        await set(ref(db, `users/${user.uid}`), {
-          username: pending.username,
-          email: pending.email
-        });
-        debug('Профиль создан из pending');
-        localStorage.removeItem('pendingProfile');
+        try {
+          await set(ref(db, `users/${user.uid}`), {
+            username: pending.username,
+            email: pending.email
+          });
+          debug('Профиль УСПЕШНО создан');
+          localStorage.removeItem('pendingProfile');
+        } catch (err) {
+          debug('ОШИБКА при создании профиля: ' + err.message);
+        }
       }
+      isCreatingProfile = false;
     }
 
-    // Переход
-    if (location.pathname.includes('register.html') || location.pathname.includes('login.html')) {
+    if (location.pathname.includes('register.html')) {
       location.href = 'chat.html';
-    }
-  } else {
-    if (location.pathname.includes('chat.html')) {
-      location.href = 'login.html';
     }
   }
 });
@@ -82,25 +83,23 @@ if ($('registerForm')) {
     if (!username || !email || !password) return alert('Заполните все поля');
 
     try {
-      // 1. Проверяем логин и email
+      // Проверка: логин/почта заняты?
       const [userSnap, emailSnap] = await Promise.all([
         get(query(ref(db, 'users'), orderByChild('username'), equalTo(username))),
         get(query(ref(db, 'users'), orderByChild('email'), equalTo(email)))
       ]);
 
-      if (userSnap.exists()) return alert('Логин занят');
-      if (emailSnap.exists()) return alert('Email используется');
+      if (userSnap.exists()) return alert('Логин уже занят');
+      if (emailSnap.exists()) return alert('Email уже используется');
 
-      debug('Создаём пользователя...');
-
-      // 2. Сохраняем данные временно
+      debug('Сохраняем данные временно...');
       localStorage.setItem('pendingProfile', JSON.stringify({ username, email }));
 
-      // 3. Создаём аккаунт
+      debug('Создаём аккаунт в Auth...');
       await createUserWithEmailAndPassword(auth, `${username}@stchat.local`, password);
-      debug('Аккаунт создан, профиль будет записан в onAuthStateChanged');
 
-      // Профиль создастся автоматически выше
+      debug('Аккаунт создан. Ожидаем onAuthStateChanged...');
+      // Профиль создастся автоматически в onAuthStateChanged
     } catch (err) {
       debug('ОШИБКА: ' + err.message);
       localStorage.removeItem('pendingProfile');
@@ -119,6 +118,7 @@ if ($('loginForm')) {
     try {
       await signInWithEmailAndPassword(auth, `${username}@stchat.local`, password);
       debug('Вход успешен');
+      location.href = 'chat.html';
     } catch (err) {
       debug('Ошибка входа: ' + err.message);
       alert('Неверный логин или пароль');
