@@ -38,12 +38,12 @@ const debug = msg => {
   console.log('[СтЧат]', msg);
 };
 
-// === ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ===
+// === АВТОРИЗАЦИЯ ===
 let isCreatingProfile = false;
 
 onAuthStateChanged(auth, async user => {
   if (user && !isCreatingProfile) {
-    debug('onAuthStateChanged: Пользователь авторизован: ' + user.uid);
+    debug('Пользователь авторизован: ' + user.uid);
 
     const profileSnap = await get(ref(db, `users/${user.uid}`));
     if (!profileSnap.exists()) {
@@ -51,55 +51,49 @@ onAuthStateChanged(auth, async user => {
       const pending = JSON.parse(localStorage.getItem('pendingProfile') || '{}');
       if (pending.username) {
         try {
-          await set(ref(db, `users/${user.uid}`), {
-            username: pending.username,
-            email: pending.email
-          });
-          debug('Профиль УСПЕШНО создан');
+          await set(ref(db, `users/${user.uid}`), { username: pending.username });
+          debug('Профиль создан');
           localStorage.removeItem('pendingProfile');
         } catch (err) {
-          debug('ОШИБКА при создании профиля: ' + err.message);
+          debug('ОШИБКА: ' + err.message);
         }
       }
       isCreatingProfile = false;
     }
 
-    if (location.pathname.includes('register.html')) {
+    if (location.pathname.includes('register.html') || location.pathname.includes('login.html')) {
       location.href = 'chat.html';
+    }
+  } else {
+    if (location.pathname.includes('chat.html')) {
+      location.href = 'login.html';
     }
   }
 });
 
-// === РЕГИСТРАЦИЯ ===
+// === РЕГИСТРАЦИЯ (БЕЗ EMAIL) ===
 if ($('registerForm')) {
   $('registerForm').onsubmit = async e => {
     e.preventDefault();
     debug('Кнопка "Создать" нажата');
 
     const username = $('regUsername').value.trim();
-    const email = $('regEmail').value.trim();
     const password = $('regPassword').value;
 
-    if (!username || !email || !password) return alert('Заполните все поля');
+    if (!username || !password) return alert('Заполните поля');
 
     try {
-      // Проверка: логин/почта заняты?
-      const [userSnap, emailSnap] = await Promise.all([
-        get(query(ref(db, 'users'), orderByChild('username'), equalTo(username))),
-        get(query(ref(db, 'users'), orderByChild('email'), equalTo(email)))
-      ]);
+      // Проверка: логин занят?
+      const snap = await get(query(ref(db, 'users'), orderByChild('username'), equalTo(username)));
+      if (snap.exists()) return alert('Логин занят');
 
-      if (userSnap.exists()) return alert('Логин уже занят');
-      if (emailSnap.exists()) return alert('Email уже используется');
+      debug('Сохраняем временно...');
+      localStorage.setItem('pendingProfile', JSON.stringify({ username }));
 
-      debug('Сохраняем данные временно...');
-      localStorage.setItem('pendingProfile', JSON.stringify({ username, email }));
-
-      debug('Создаём аккаунт в Auth...');
+      debug('Создаём аккаунт...');
       await createUserWithEmailAndPassword(auth, `${username}@stchat.local`, password);
 
-      debug('Аккаунт создан. Ожидаем onAuthStateChanged...');
-      // Профиль создастся автоматически в onAuthStateChanged
+      debug('Аккаунт создан. Профиль будет в onAuthStateChanged');
     } catch (err) {
       debug('ОШИБКА: ' + err.message);
       localStorage.removeItem('pendingProfile');
@@ -108,7 +102,7 @@ if ($('registerForm')) {
   };
 }
 
-// === ВХОД ===
+// === ВХОД (БЕЗ EMAIL) ===
 if ($('loginForm')) {
   $('loginForm').onsubmit = async e => {
     e.preventDefault();
@@ -118,7 +112,6 @@ if ($('loginForm')) {
     try {
       await signInWithEmailAndPassword(auth, `${username}@stchat.local`, password);
       debug('Вход успешен');
-      location.href = 'chat.html';
     } catch (err) {
       debug('Ошибка входа: ' + err.message);
       alert('Неверный логин или пароль');
